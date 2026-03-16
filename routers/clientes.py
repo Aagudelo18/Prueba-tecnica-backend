@@ -1,13 +1,13 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from models.modelo_clientes import Clientes
 from bson import ObjectId
 from db.config import db
-
+from seguridad import validar_token
 
 router = APIRouter(tags=["clientes"])
 
 @router.get("/clientes")
-def lista_cliente():
+def lista_cliente(user=Depends(validar_token)):
     clientes = list(db.clientes.find())
     
     for cliente in clientes:
@@ -16,7 +16,7 @@ def lista_cliente():
     return clientes
 
 @router.get("/clientes/{cliente_id}")
-def capturar_cliente(cliente_id:str):
+def capturar_cliente(cliente_id:str, user=Depends(validar_token)):
     
     cliente = db.clientes.find_one({"_id":ObjectId(cliente_id)})
     
@@ -27,14 +27,14 @@ def capturar_cliente(cliente_id:str):
     return {"Error": "Cliente no encontrado"}
 
 @router.post("/clientes")
-async def crear_clientes(cliente:Clientes):
+async def crear_clientes(cliente:Clientes, user=Depends(validar_token)):
      nuevo_cliente = cliente.dict()
      resultado= db.clientes.insert_one(nuevo_cliente)
 
      return {"mensaje": "Cliente creado correctamente", "id_cliente": str(resultado.inserted_id)}
  
 @router.put("/clientes/{cliente_id}")
-def actualizar_cliente(cliente_id: str, cliente:Clientes):
+def actualizar_cliente(cliente_id: str, cliente:Clientes, user=Depends(validar_token)):
     
     datos_actualizar = cliente.dict()
     
@@ -48,7 +48,7 @@ def actualizar_cliente(cliente_id: str, cliente:Clientes):
     return{"mensaje": "No hubo ningun cambio"}
 
 @router.delete("/clientes/{cliente_id}")
-def eliminar_cliente(cliente_id:str):
+def eliminar_cliente(cliente_id:str, user=Depends(validar_token)):
     
     resultado = db.clientes.delete_one({"_id": ObjectId(cliente_id)})
     

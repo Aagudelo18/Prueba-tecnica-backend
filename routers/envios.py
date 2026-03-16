@@ -1,14 +1,14 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from models.modelo_envios import Envios
 from bson import ObjectId
 from db.config import db
 import re
-
+from seguridad import validar_token
 
 router = APIRouter(tags=["envios"])
 
 @router.get("/envios")
-def listar_envios():
+def listar_envios(user=Depends(validar_token)):
 
     envios = list(db.envios.find())
 
@@ -26,7 +26,7 @@ def listar_envios():
     return envios
 
 @router.get("/envios/{envio_id}")
-def obtener_envio(envio_id: str):
+def obtener_envio(envio_id: str, user=Depends(validar_token)):
 
     envio = db.envios.find_one({"_id": ObjectId(envio_id)})
 
@@ -46,7 +46,7 @@ def obtener_envio(envio_id: str):
     return envio
 
 @router.post("/envios")
-def crear_envio(envio: Envios):
+def crear_envio(envio: Envios, user=Depends(validar_token)):
 
     if envio.cantidad_producto <= 0:
         raise HTTPException(status_code=400, detail="Cantidad debe ser mayor a 0")
@@ -115,7 +115,7 @@ def crear_envio(envio: Envios):
     }
     
 @router.put("/envios/{envio_id}")
-def actualizar_envio(envio_id: str, envio: Envios):
+def actualizar_envio(envio_id: str, envio: Envios, user=Depends(validar_token)):
 
     if envio.cantidad_producto <= 0:
         raise HTTPException(status_code=400, detail="Cantidad debe ser mayor a 0")
@@ -179,7 +179,7 @@ def actualizar_envio(envio_id: str, envio: Envios):
     }
     
 @router.delete("/envios/{envio_id}")
-def eliminar_envio(envio_id: str):
+def eliminar_envio(envio_id: str, user=Depends(validar_token)):
 
     resultado = db.envios.delete_one({"_id": ObjectId(envio_id)})
 

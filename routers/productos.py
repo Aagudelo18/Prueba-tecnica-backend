@@ -1,13 +1,13 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from models.modelo_productos import Productos
 from bson import ObjectId
 from db.config import db
-
+from seguridad import validar_token
 
 router = APIRouter(tags=["productos"])
 
 @router.get("/productos")
-def lista_producto():
+def lista_producto(user=Depends(validar_token)):
     productos = list(db.productos.find())
     
     for producto in productos:
@@ -16,7 +16,7 @@ def lista_producto():
     return productos
 
 @router.get("/productos/{producto_id}")
-def capturar_producto(producto_id:str):
+def capturar_producto(producto_id:str,user=Depends(validar_token)):
     
     producto = db.productos.find_one({"_id":ObjectId(producto_id)})
     
@@ -27,14 +27,14 @@ def capturar_producto(producto_id:str):
     return {"Error": "Producto no encontrado"}
 
 @router.post("/productos")
-async def crear_productos(producto:Productos):
+async def crear_productos(producto:Productos, user=Depends(validar_token)):
      nuevo_producto = producto.dict()
      resultado= db.productos.insert_one(nuevo_producto)
 
      return {"mensaje": "Producto creado correctamente", "id_producto": str(resultado.inserted_id)}
  
 @router.put("/productos/{producto_id}")
-def actualizar_producto(producto_id: str, producto:Productos):
+def actualizar_producto(producto_id: str, producto:Productos, user=Depends(validar_token)):
     
     datos_actualizar = producto.dict()
     
@@ -48,7 +48,7 @@ def actualizar_producto(producto_id: str, producto:Productos):
     return{"mensaje": "No hubo ningun cambio"}
 
 @router.delete("/productos/{producto_id}")
-def eliminar_producto(producto_id:str):
+def eliminar_producto(producto_id:str,user=Depends(validar_token)):
     
     resultado = db.productos.delete_one({"_id": ObjectId(producto_id)})
     
